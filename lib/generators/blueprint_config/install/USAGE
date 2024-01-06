@@ -1,0 +1,8 @@
+Description:
+    Generate a migration for config settings in ActiveRecord
+
+Example:
+    rails generate blueprint:install
+
+    This will create:
+      db/migrate/20240107123730_create_blueprint_settings.rb

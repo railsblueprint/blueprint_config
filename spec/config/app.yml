@@ -1,0 +1,24 @@
+default:
+  nested:
+    a: 1
+    b: 2
+  array:
+    - a
+    - b
+    - x
+  array2:
+    - a:
+        d: 1
+        e: 2
+      b: 2
+    - b: 1
+      c: 3
+    - x: 4
+      y: 5
+
+test:
+  quox: baz
+  envir: "<%= ENV['APP_EXAMPLE'] %>"
+  nested:
+    a: 3
+    c: 4

@@ -1,0 +1,18 @@
+class CreateBlueConfig < ActiveRecord::Migration<%= migration_version %>
+  def change
+    reversible do |dir|
+      dir.up do
+        # Ensure this incremental update migration is idempotent
+        # with monolithic install migration.
+        return if connection.table_exists?(:settings)
+      end
+    end
+
+    create_table :settings, id: :uuid do |t|
+      t.string :key, null: false, index: { unique: true }
+      t.integer :type, null: false, default: 0
+      t.string :value
+      t.timestamps
+    end
+  end
+end
