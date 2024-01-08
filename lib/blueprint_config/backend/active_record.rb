@@ -11,7 +11,7 @@ module BlueprintConfig
         =======================================================================
         Settings table not found. Please add the configuration table by running:
 
-        rails generate blue_config:migration
+        rails generate blueprint_config:install
         rake db:migrate
         =======================================================================
       WARNING
@@ -20,16 +20,27 @@ module BlueprintConfig
         @options = options
         @updated_at = nil
         @last_checked_at = nil
-        @mutex = Mutex.new
+        @configured = true
+        @mutex = Thread::Mutex.new
       end
 
       def load_keys
+        @configured = true
         update_timestamp
 
         data = Setting.all.map { |s| { s.key => s.parsed_value } }.reduce(:merge) || {}
         return data.transform_keys(&:to_sym) unless @options[:nest]
 
         nest_hash(data, @options[:nest_separator] || '.')
+      rescue ::ActiveRecord::NoDatabaseError => e
+        # database is not created yet
+        @configured = false
+        {}
+      rescue ::ActiveRecord::StatementInvalid => e
+        @configured = false
+        Rails.logger.warn(e.message)
+        Rails.logger.warn(MISSING_TABLE_WARNING)
+        {}
       end
 
       def update_timestamp
@@ -39,6 +50,8 @@ module BlueprintConfig
       end
 
       def fresh?
+        # if database is not create/configured yet - don't try to refresh settings from it
+        return true if !@configured
         return true if @last_checked_at.present? && @last_checked_at > 1.second.ago
 
         @mutex.synchronize do
