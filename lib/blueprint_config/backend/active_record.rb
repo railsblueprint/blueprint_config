@@ -51,13 +51,18 @@ module BlueprintConfig
 
       def fresh?
         # if database is not create/configured yet - don't try to refresh settings from it
-        return true if !@configured
+        return true unless @configured
         return true if @last_checked_at.present? && @last_checked_at > 1.second.ago
 
         @mutex.synchronize do
           @last_checked_at = Time.now
         end
-        @updated_at.present? && @updated_at >= Setting.maximum(:updated_at)
+        max_updated_at = Setting.maximum(:updated_at)
+
+        # if there is no settings in the database - don't try to refresh settings from it'
+        return true if max_updated_at.blank?
+
+        @updated_at.present? && @updated_at >= max_updated_at
       end
     end
   end
