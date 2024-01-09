@@ -11,10 +11,21 @@ module BlueprintConfig
         =======================================================================
         Settings table not found. Please add the configuration table by running:
 
-        rails generate blueprint_config:install
-        rake db:migrate
+        bundle exec rails generate blueprint_config:install
+        bundle exec rake db:migrate
         =======================================================================
       WARNING
+
+      MISSING_ATTRIBUTES_WARNING = <<-WARNING.gsub(/^ */, '')
+        =======================================================================
+        Settings table is missing required attributes: %s
+
+        You can create a migration and adjust it to your needs by running:
+        bundle exec rails generate blueprint_config:install
+        =======================================================================
+      WARNING
+
+      REQUIRED_ATTRIBUTES = %w[key value type updated_at].freeze
 
       def initialize(options = {})
         @options = options
@@ -26,21 +37,62 @@ module BlueprintConfig
 
       def load_keys
         @configured = true
+
+        return {} unless table_exist?
+        return {} unless has_required_attributes?
+
         update_timestamp
 
         data = Setting.all.map { |s| { s.key => s.parsed_value } }.reduce(:merge) || {}
         return data.transform_keys(&:to_sym) unless @options[:nest]
 
         nest_hash(data, @options[:nest_separator] || '.')
-      rescue ::ActiveRecord::NoDatabaseError => e
+      rescue ::ActiveRecord::NoDatabaseError, ::ActiveRecord::ConnectionNotEstablished
         # database is not created yet
         @configured = false
         {}
       rescue ::ActiveRecord::StatementInvalid => e
         @configured = false
-        Rails.logger.warn(e.message)
-        Rails.logger.warn(MISSING_TABLE_WARNING)
+        unless @options[:silence_warnings]
+          puts "Failed to load seetings from database: #{e.message}"
+          Rails.logger.warn(e.message) if defined?(Rails)
+        end
         {}
+      end
+
+      def table_exist?
+        Setting.reset_column_information
+        return true if Setting.table_exists?
+
+        @configured = false
+
+        unless @options[:silence_warnings]
+          puts MISSING_TABLE_WARNING
+          if defined?(Rails)
+            Rails.logger.warn(e.message)
+            Rails.logger.warn(MISSING_TABLE_WARNING)
+          end
+        end
+
+        false
+      end
+
+      def has_required_attributes?
+        Setting.reset_column_information
+        return true if REQUIRED_ATTRIBUTES - Setting.attribute_names == []
+
+        @configured = false
+
+        missing = (REQUIRED_ATTRIBUTES - Setting.attribute_names).join(', ')
+        unless @options[:silence_warnings]
+          puts MISSING_ATTRIBUTES_WARNING % missing
+          if defined?(Rails)
+            Rails.logger.warn(e.message)
+            Rails.logger.warn(MISSING_TABLE_WARNING)
+          end
+        end
+
+        false
       end
 
       def update_timestamp

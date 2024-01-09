@@ -16,7 +16,7 @@ module BlueprintConfig
           reload! unless backends&.fresh?
           config.#{method}(...)
         rescue KeyError => e
-          raise KeyError, e.message, caller[1..], cause: nil    
+          raise KeyError, e.message, caller[1..], cause: nil#{'    '}
         end
       RUBY
     end

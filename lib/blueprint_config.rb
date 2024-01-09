@@ -9,14 +9,18 @@ require 'blueprint_config/backend_collection'
 module BlueprintConfig
   class << self
     attr_accessor :root, :env, :before_initialize, :after_initialize
-    attr_writer :shortcut_name, :env_options
+    attr_writer :shortcut_name, :env_backend_options, :active_record_backend_options
 
     def shortcut_name
       @shortcut_name || 'AppConfig'
     end
 
-    def env_options
-      @env_options || {}
+    def env_backend_options
+      @env_backend_options ||= {}
+    end
+
+    def active_record_backend_options
+      @active_record_backend_options ||= { nest: true }
     end
 
     def define_shortcut
@@ -46,8 +50,6 @@ module BlueprintConfig
   end
 end
 
-BlueprintConfig.env_options ||= {}
-
 BlueprintConfig.before_initialize ||= proc do
   require 'blueprint_config/backend/credentials'
   require 'blueprint_config/backend/active_record'
@@ -55,17 +57,19 @@ BlueprintConfig.before_initialize ||= proc do
   BlueprintConfig.instance.init do |backends|
     backends.use :app,         BlueprintConfig::Backend::YAML.new('config/app.yml')
     backends.use :credentials, BlueprintConfig::Backend::Credentials.new
-    backends.use :env,         BlueprintConfig::Backend::ENV.new(BlueprintConfig.env_options)
+    backends.use :env,         BlueprintConfig::Backend::ENV.new(BlueprintConfig.env_backend_options)
     backends.use :app_local,   BlueprintConfig::Backend::YAML.new('config/app.local.yml')
   end
 end
 
 BlueprintConfig.after_initialize ||= proc do
   BlueprintConfig.instance.refine do |backends|
+    ar_backend = BlueprintConfig::Backend::ActiveRecord.new(BlueprintConfig.active_record_backend_options)
+
     if backends[:env]
-      backends.insert_after :env, :db, BlueprintConfig::Backend::ActiveRecord.new
+      backends.insert_after :env, :db, ar_backend
     else
-      backends.push :db, BlueprintConfig::Backend::ActiveRecord.new
+      backends.push :db, ar_backend
     end
   end
 end
