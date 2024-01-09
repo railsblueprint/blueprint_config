@@ -69,7 +69,6 @@ module BlueprintConfig
         unless @options[:silence_warnings]
           puts MISSING_TABLE_WARNING
           if defined?(Rails)
-            Rails.logger.warn(e.message)
             Rails.logger.warn(MISSING_TABLE_WARNING)
           end
         end
@@ -87,7 +86,6 @@ module BlueprintConfig
         unless @options[:silence_warnings]
           puts MISSING_ATTRIBUTES_WARNING % missing
           if defined?(Rails)
-            Rails.logger.warn(e.message)
             Rails.logger.warn(MISSING_TABLE_WARNING)
           end
         end
