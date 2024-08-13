@@ -6,7 +6,7 @@ module BlueprintConfig
   class Setting < ::ActiveRecord::Base
     self.inheritance_column = nil
 
-    enum type: { section: 0, string: 1, integer: 2, boolean: 3, json: 4, selection: 5, set: 6 }
+    enum :type, { section: 0, string: 1, integer: 2, boolean: 3, json: 4, selection: 5, set: 6 }
 
     def parsed_json_value
       parsed = begin
