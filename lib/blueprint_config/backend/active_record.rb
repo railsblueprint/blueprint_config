@@ -114,6 +114,14 @@ module BlueprintConfig
 
         @updated_at.present? && @updated_at >= max_updated_at
       end
+
+      def source
+        if @configured && table_exist?
+          "#{self.class.name}(settings table)"
+        else
+          "#{self.class.name}(not available)"
+        end
+      end
     end
   end
 end

@@ -108,5 +108,25 @@ module BlueprintConfig
     def deep_merge?(other)
       other.is_a?(self.class)
     end
+
+    def with_sources
+      result = {}
+      each do |key, value|
+        if value.is_a?(BlueprintConfig::OptionsHash)
+          result[key] = value.with_sources
+        elsif value.is_a?(BlueprintConfig::OptionsArray)
+          result[key] = {
+            value: value.to_a,
+            source: @__sources[key]
+          }
+        else
+          result[key] = {
+            value: value,
+            source: @__sources[key]
+          }
+        end
+      end
+      result
+    end
   end
 end

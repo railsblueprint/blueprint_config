@@ -60,5 +60,38 @@ module BlueprintConfig
         object
       end
     end
+
+    def set(key, value = nil)
+      memory_backend = @backends[:memory]
+      raise "Memory backend not configured. Only available in test environment." unless memory_backend
+
+      if key.is_a?(Hash)
+        # Handle hash argument: AppConfig.set(foo: { bar: 'baz' })
+        key.each do |k, v|
+          set(k.to_s, v)
+        end
+      else
+        memory_backend.set(key.to_s, value)
+      end
+      reload!
+    end
+
+    def clear_memory!
+      memory_backend = @backends[:memory]
+      return unless memory_backend
+
+      memory_backend.clear
+      reload!
+    end
+
+    def to_h
+      reload! unless backends&.fresh?
+      config.to_h
+    end
+
+    def with_sources
+      reload! unless backends&.fresh?
+      config.with_sources
+    end
   end
 end

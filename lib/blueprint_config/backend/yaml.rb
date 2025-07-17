@@ -20,6 +20,10 @@ module BlueprintConfig
         end
       end
 
+      def source
+        "#{self.class.name}(#{@path})"
+      end
+
       private
 
       def path

@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require 'active_support'
+require 'active_support/core_ext'
+require 'active_support/string_inquirer'
 require 'blueprint_config'
 
 BlueprintConfig.root = File.dirname(__FILE__)
