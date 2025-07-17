@@ -42,6 +42,18 @@ module BlueprintConfig
 
         nest_hash(filtered_env, @options[:nest_separator] || '_')
       end
+
+      def source
+        details = []
+        details << "whitelist_keys: #{@options[:whitelist_keys].join(', ')}" if @options[:whitelist_keys]
+        details << "whitelist_prefixes: #{@options[:whitelist_prefixes].join(', ')}" if @options[:whitelist_prefixes]
+        
+        if details.any?
+          "#{self.class.name}(#{details.join(', ')})"
+        else
+          self.class.name
+        end
+      end
     end
   end
 end

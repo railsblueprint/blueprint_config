@@ -3,6 +3,7 @@
 require 'blueprint_config/version'
 require 'blueprint_config/backend/env'
 require 'blueprint_config/backend/yaml'
+require 'blueprint_config/backend/memory'
 require 'blueprint_config/configuration'
 require 'blueprint_config/backend_collection'
 
@@ -59,6 +60,11 @@ BlueprintConfig.before_initialize ||= proc do
     backends.use :credentials, BlueprintConfig::Backend::Credentials.new
     backends.use :env,         BlueprintConfig::Backend::ENV.new(BlueprintConfig.env_backend_options)
     backends.use :app_local,   BlueprintConfig::Backend::YAML.new('config/app.local.yml')
+    
+    # Memory backend with highest priority for test environment (added last)
+    if defined?(Rails) && Rails.env.test?
+      backends.use :memory, BlueprintConfig::Backend::Memory.new
+    end
   end
 end
 
@@ -70,6 +76,13 @@ BlueprintConfig.after_initialize ||= proc do
       backends.insert_after :env, :db, ar_backend
     else
       backends.push :db, ar_backend
+    end
+
+    # Ensure memory backend is always last (highest priority) in test environment
+    if defined?(Rails) && Rails.env.test? && backends[:memory]
+      memory_backend = backends[:memory]
+      backends.delete(:memory)
+      backends.push :memory, memory_backend
     end
   end
 end
